@@ -1,0 +1,27 @@
+# Dépendances Python du backend OSINT-Frame.
+# Reconstruit en scannant les imports réels du code (voir README pour
+# les dépendances SYSTÈME requises en plus, notamment pour WeasyPrint).
+#
+# Installation : pip install -r requirements.txt --break-system-packages
+
+# --- API / web ---
+fastapi
+uvicorn[standard]
+
+# --- Modèle de données ---
+pydantic
+
+# --- Base de données (historique des scans) ---
+sqlalchemy
+
+# --- Réseau / scan ---
+requests
+dnspython
+urllib3
+
+# --- Génération de rapport PDF ---
+jinja2
+weasyprint
+
+# --- Configuration (config/api_keys.yaml) ---
+pyyaml

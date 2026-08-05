@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSINT-Frame — Reconnaissance automatisée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+
+<!-- ==================== HEADER ==================== -->
+<header class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <span class="brand-mark">⟡</span>
+            <span class="brand-name">OSINT<span class="brand-accent">-Frame</span></span>
+        </div>
+        <div class="api-status" id="apiStatus">
+            <span class="status-dot" id="apiStatusDot"></span>
+            <span id="apiStatusText">Vérification de l'API…</span>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- ==================== HERO / FORMULAIRE ==================== -->
+    <section class="hero">
+        <p class="eyebrow">Reconnaissance passive · Bug bounty</p>
+        <h1 class="hero-title">Cartographie l'exposition<br>d'un domaine, <span class="hero-accent">automatiquement</span>.</h1>
+        <p class="hero-sub">Sous-domaines · Technologies exposées · Employés · Fuites de credentials — un score, un rapport.</p>
+
+        <form id="scanForm" class="scan-form" autocomplete="off">
+            <div class="input-group">
+                <span class="input-prefix">https://</span>
+                <input
+                    type="text"
+                    id="domainInput"
+                    name="domain"
+                    placeholder="domaine-cible.com"
+                    required
+                    pattern="^(?!-)[A-Za-z0-9-]{1,63}(?&lt;!-)(\.[A-Za-z0-9-]{1,63})+$"
+                    aria-label="Domaine à scanner"
+                >
+                <button type="submit" id="scanButton" class="btn-scan">
+                    <span class="btn-scan-text">Scanner</span>
+                </button>
+            </div>
+
+            <div class="options-row">
+                <label class="option-field">
+                    <span>Fuites</span>
+                    <select id="providerSelect" name="provider">
+                        <option value="xposedornot" selected>XposedOrNot (gratuit)</option>
+                        <option value="leakcheck">LeakCheck</option>
+                        <option value="hibp">HaveIBeenPwned</option>
+                        <option value="both">Tous</option>
+                    </select>
+                </label>
+                <label class="option-field">
+                    <span>Technologies</span>
+                    <select id="techEngineSelect" name="tech_engine">
+                        <option value="both" selected>WhatWeb + Lite</option>
+                        <option value="whatweb">WhatWeb seul</option>
+                        <option value="lite">Détecteur lite seul</option>
+                    </select>
+                </label>
+            </div>
+
+            <p class="form-error" id="formError" role="alert" hidden></p>
+        </form>
+    </section>
+
+    <!-- ==================== TERMINAL (élément signature) ==================== -->
+    <section class="terminal-section" id="terminalSection" hidden>
+        <div class="terminal">
+            <div class="terminal-header">
+                <span class="terminal-dot dot-red"></span>
+                <span class="terminal-dot dot-yellow"></span>
+                <span class="terminal-dot dot-green"></span>
+                <span class="terminal-title">scan@osint-frame — <span id="terminalDomain"></span></span>
+            </div>
+            <div class="terminal-body" id="terminalBody">
+                <div class="terminal-line">
+                    <span class="prompt">$</span> <span id="terminalCmd"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== RÉSULTATS ==================== -->
+    <section class="results-section" id="resultsSection" hidden>
+
+        <div class="score-panel">
+            <div class="gauge-wrap">
+                <svg viewBox="0 0 140 140" class="gauge" id="scoreGauge">
+                    <circle cx="70" cy="70" r="60" class="gauge-track"></circle>
+                    <circle cx="70" cy="70" r="60" class="gauge-fill" id="gaugeFill"
+                            stroke-dasharray="377" stroke-dashoffset="377"></circle>
+                </svg>
+                <div class="gauge-center">
+                    <span class="gauge-value" id="gaugeValue">—</span>
+                    <span class="gauge-max">/100</span>
+                </div>
+            </div>
+            <div class="score-meta">
+                <span class="score-band" id="scoreBand">—</span>
+                <p class="score-explain">
+                    Niveau d'exposition externe estimé à partir de sources publiques.
+                    Aucune tentative d'exploitation n'a été réalisée.
+                </p>
+                <a href="#" id="downloadReportBtn" class="btn-download" hidden>
+                    <span>Télécharger le rapport PDF</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="summary-cards" id="summaryCards"></div>
+
+        <div class="accordion" id="accordion"></div>
+    </section>
+
+    <!-- ==================== ÉTAT VIDE / ERREUR ==================== -->
+    <section class="scan-error" id="scanErrorSection" hidden>
+        <p class="scan-error-title">Le scan a échoué</p>
+        <p class="scan-error-detail" id="scanErrorDetail"></p>
+    </section>
+
+    <!-- ==================== HISTORIQUE ==================== -->
+    <section class="history-section" id="historySection">
+        <div class="history-header">
+            <h2 class="history-title">Scans précédents</h2>
+            <button type="button" id="historyRefresh" class="btn-ghost">Actualiser</button>
+        </div>
+        <div id="historyList" class="history-list">
+            <p class="history-empty">Chargement de l'historique…</p>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <p>OSINT-Frame — usage limité aux domaines pour lesquels tu es explicitement autorisé (programme bug bounty en scope, ou tes propres actifs).</p>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

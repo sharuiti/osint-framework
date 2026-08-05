@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rapport OSINT — {{ domain }}</title>
+<style>
+    /* ------------------------------------------------------------
+       Palette : mêmes tons violets que le frontend, mais fond clair
+       pour l'impression (économie d'encre, meilleure lisibilité papier).
+       L'accent violet reste la signature visuelle du rapport.
+       ------------------------------------------------------------ */
+    :root {
+        --violet: #7c3aed;
+        --violet-dark: #5b21b6;
+        --violet-light: #ede9fe;
+        --text: #1e1b29;
+        --text-muted: #6b7280;
+        --border: #e5e0f5;
+        --low: #16a34a;
+        --medium: #d97706;
+        --high: #ea580c;
+        --critical: #dc2626;
+    }
+
+    @page {
+        size: A4;
+        margin: 2cm 1.8cm;
+        @bottom-center {
+            content: "Rapport confidentiel — " "{{ domain }}" " — Page " counter(page) " / " counter(pages);
+            font-size: 8pt;
+            color: #9ca3af;
+        }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: 'DejaVu Sans', Arial, sans-serif;
+        color: var(--text);
+        font-size: 10.5pt;
+        line-height: 1.5;
+    }
+
+    h1, h2, h3 { color: var(--violet-dark); margin-top: 0; }
+    h1 { font-size: 22pt; margin-bottom: 4px; }
+    h2 {
+        font-size: 14pt;
+        border-bottom: 2px solid var(--violet);
+        padding-bottom: 6px;
+        margin-top: 28px;
+        page-break-after: avoid;
+    }
+    h3 { font-size: 11.5pt; margin-bottom: 6px; page-break-after: avoid; }
+
+    .cover {
+        text-align: center;
+        padding-top: 30%;
+        page-break-after: always;
+    }
+    .cover .tag {
+        display: inline-block;
+        background: var(--violet);
+        color: white;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 9pt;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+    .cover h1 { font-size: 28pt; }
+    .cover .domain { font-size: 16pt; color: var(--text-muted); margin-top: 6px; }
+    .cover .meta { margin-top: 40px; font-size: 9.5pt; color: var(--text-muted); }
+
+    .summary-grid {
+        display: flex;
+        gap: 16px;
+        margin: 16px 0 24px;
+    }
+    .summary-card {
+        flex: 1;
+        background: var(--violet-light);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        text-align: center;
+    }
+    .summary-card .value { font-size: 20pt; font-weight: bold; color: var(--violet-dark); }
+    .summary-card .label { font-size: 8.5pt; color: var(--text-muted); text-transform: uppercase; }
+
+    .score-block {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        background: var(--violet-light);
+        border-radius: 10px;
+        padding: 18px 22px;
+        margin: 16px 0 24px;
+    }
+    .score-value { font-size: 36pt; font-weight: bold; color: var(--violet-dark); }
+    .score-band {
+        display: inline-block;
+        padding: 3px 12px;
+        border-radius: 14px;
+        font-size: 9pt;
+        font-weight: bold;
+        color: white;
+        text-transform: uppercase;
+    }
+    .band-Low { background: var(--low); }
+    .band-Medium { background: var(--medium); }
+    .band-High { background: var(--high); }
+    .band-Critical { background: var(--critical); }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 20px;
+        font-size: 9.5pt;
+    }
+    th {
+        background: var(--violet);
+        color: white;
+        text-align: left;
+        padding: 7px 10px;
+        font-size: 8.5pt;
+        text-transform: uppercase;
+    }
+    td {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border);
+    }
+    tr:nth-child(even) td { background: #faf9ff; }
+
+    .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 8pt;
+        font-weight: bold;
+        color: white;
+    }
+    .badge-leaked { background: var(--critical); }
+    .badge-clean { background: var(--low); }
+    .badge-risk-low { background: var(--low); }
+    .badge-risk-medium { background: var(--medium); }
+    .badge-risk-high { background: var(--high); }
+    .badge-risk-critical { background: var(--critical); }
+    .badge-unknown { background: #9ca3af; }
+
+    .category-row { page-break-inside: avoid; margin-bottom: 12px; }
+    .category-bar-track {
+        background: #e5e0f5;
+        border-radius: 6px;
+        height: 10px;
+        overflow: hidden;
+        margin-top: 4px;
+    }
+    .category-bar-fill {
+        height: 100%;
+        background: var(--violet);
+    }
+    .category-reason { font-size: 8.5pt; color: var(--text-muted); margin-top: 3px; }
+
+    .recommendations li { margin-bottom: 8px; }
+    .empty-note { color: var(--text-muted); font-style: italic; font-size: 9.5pt; }
+
+    .disclaimer {
+        margin-top: 30px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        font-size: 8pt;
+        color: var(--text-muted);
+    }
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE DE GARDE ==================== -->
+<div class="cover">
+    <div class="tag">Rapport de reconnaissance OSINT</div>
+    <h1>Surface d'exposition externe</h1>
+    <div class="domain">{{ domain }}</div>
+    <div class="meta">
+        Généré le {{ scanned_at }}<br>
+        Document confidentiel — usage restreint au destinataire
+    </div>
+</div>
+
+<!-- ==================== RÉSUMÉ EXÉCUTIF ==================== -->
+<h2>Résumé exécutif</h2>
+
+<div class="score-block">
+    <div>
+        <div class="score-value">{{ score if score is not none else "N/A" }}<span style="font-size:14pt;">/100</span></div>
+        <span class="score-band band-{{ score_band }}">{{ score_band }}</span>
+    </div>
+    <div style="flex:1; font-size:9.5pt; color: var(--text-muted);">
+        Ce score reflète le niveau d'exposition externe du domaine tel qu'observable
+        par un tiers via des sources publiques (OSINT), et non une preuve d'exploitation
+        confirmée. Il combine la surface d'attaque, la divulgation de technologies,
+        l'exposition d'employés et la présence de fuites de credentials connues.
+    </div>
+</div>
+
+<div class="summary-grid">
+    <div class="summary-card">
+        <div class="value">{{ total_subdomains }}</div>
+        <div class="label">Sous-domaines actifs</div>
+    </div>
+    <div class="summary-card">
+        <div class="value">{{ total_technologies }}</div>
+        <div class="label">Technologies détectées</div>
+    </div>
+    <div class="summary-card">
+        <div class="value">{{ total_employees }}</div>
+        <div class="label">Employés identifiés</div>
+    </div>
+    <div class="summary-card">
+        <div class="value">{{ total_emails_leaked }}/{{ total_emails_checked }}</div>
+        <div class="label">Emails compromis</div>
+    </div>
+</div>
+
+<!-- ==================== DÉTAIL DU SCORE ==================== -->
+<h2>Détail du score par catégorie</h2>
+{% for cat in score_categories %}
+<div class="category-row">
+    <h3>{{ cat.label }} — {{ cat.score }}/100 <span style="color: var(--text-muted); font-weight: normal;">(poids {{ cat.weight_pct }}%)</span></h3>
+    <div class="category-bar-track">
+        <div class="category-bar-fill" style="width: {{ cat.score }}%;"></div>
+    </div>
+    <div class="category-reason">{{ cat.reason }}</div>
+</div>
+{% endfor %}
+
+<!-- ==================== SOUS-DOMAINES ==================== -->
+<h2>Sous-domaines actifs</h2>
+{% if subdomains %}
+<table>
+    <thead><tr><th>Sous-domaine</th><th>Adresse(s) IP</th></tr></thead>
+    <tbody>
+    {% for sub in subdomains %}
+        <tr><td>{{ sub.subdomain }}</td><td>{{ sub.ips | join(", ") }}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-note">Aucun sous-domaine actif détecté.</p>
+{% endif %}
+
+<!-- ==================== SUBDOMAIN TAKEOVER ==================== -->
+<h2>Candidats au subdomain takeover</h2>
+{% if takeover_candidates %}
+<table>
+    <thead><tr><th>Sous-domaine</th><th>CNAME</th><th>Service</th><th>Confiance</th><th>Détail</th></tr></thead>
+    <tbody>
+    {% for c in takeover_candidates %}
+        <tr>
+            <td>{{ c.subdomain }}</td>
+            <td>{{ c.cname }}</td>
+            <td>{{ c.service }}</td>
+            <td><span class="badge badge-risk-{{ 'critical' if c.confidence == 'high' else 'medium' }}">{{ c.confidence }}</span></td>
+            <td>{{ c.detail }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p class="empty-note">
+    Ces candidats n'ont fait l'objet d'AUCUNE tentative de revendication (création de bucket,
+    d'app, etc.) — c'est une détection strictement passive. Une vérification manuelle est
+    nécessaire avant tout signalement, et toute action de revendication doit rester dans le
+    cadre d'une autorisation explicite (scope du programme concerné).
+</p>
+{% else %}
+<p class="empty-note">Aucun candidat au subdomain takeover détecté.</p>
+{% endif %}
+
+<!-- ==================== ENVIRONNEMENTS HORS-PROD ==================== -->
+<h2>Environnements hors-prod / panneaux d'administration</h2>
+{% if environment_candidates %}
+<table>
+    <thead><tr><th>Sous-domaine</th><th>Catégorie</th><th>Mot-clé</th><th>Risque</th></tr></thead>
+    <tbody>
+    {% for c in environment_candidates %}
+        <tr>
+            <td>{{ c.subdomain }}</td>
+            <td>{{ "Panneau admin" if c.category == "admin_panel" else "Hors-prod" }}</td>
+            <td>{{ c.matched_keyword }}</td>
+            <td><span class="badge badge-risk-{{ c.risk }}">{{ c.risk }}</span></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p class="empty-note">
+    Détection par mot-clé sur le NOM du sous-domaine uniquement — aucune requête n'a été
+    envoyée pour vérifier le contenu réel. Le nom seul ne confirme rien (ex: "test.example.com"
+    peut être un vrai environnement de test ou une coïncidence de nommage) : vérification
+    manuelle nécessaire pour chaque candidat.
+</p>
+{% else %}
+<p class="empty-note">Aucun environnement hors-prod ou panneau d'administration détecté.</p>
+{% endif %}
+
+<!-- ==================== TECHNOLOGIES ==================== -->
+<h2>Technologies exposées</h2>
+{% if technologies %}
+<table>
+    <thead><tr><th>Domaine</th><th>Technologie</th><th>Version</th><th>Catégorie</th></tr></thead>
+    <tbody>
+    {% for entry in technologies %}
+        {% for tech in entry.technologies %}
+        <tr>
+            <td>{{ entry.domain }}</td>
+            <td>{{ tech.name }}</td>
+            <td>{{ tech.version or "—" }}</td>
+            <td>{{ tech.category or "—" }}</td>
+        </tr>
+        {% endfor %}
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-note">Aucune technologie détectée.</p>
+{% endif %}
+
+<!-- ==================== SURFACE DE PHISHING ==================== -->
+<h2>Surface de phishing (SPF / DKIM / DMARC)</h2>
+{% if email_security %}
+<table>
+    <thead><tr><th>Contrôle</th><th>Statut</th><th>Détail</th></tr></thead>
+    <tbody>
+        <tr>
+            <td>SPF</td>
+            <td><span class="badge badge-risk-{{ email_security.spf.risk }}">{{ email_security.spf.qualifier or "absent" }}</span></td>
+            <td>{{ email_security.spf.detail }}</td>
+        </tr>
+        <tr>
+            <td>DMARC</td>
+            <td><span class="badge badge-risk-{{ email_security.dmarc.risk }}">{{ email_security.dmarc.policy or "absent" }}</span></td>
+            <td>{{ email_security.dmarc.detail }}</td>
+        </tr>
+        <tr>
+            <td>DKIM</td>
+            <td>
+                {% if email_security.dkim.detected %}<span class="badge badge-risk-low">confirmé</span>
+                {% else %}<span class="badge badge-unknown">non trouvé</span>{% endif %}
+            </td>
+            <td>{{ email_security.dkim.detail }}</td>
+        </tr>
+    </tbody>
+</table>
+{% if email_security.email_format.format %}
+<p class="empty-note">
+    Format d'email dominant déduit : <strong>{{ email_security.email_format.format }}</strong>
+    ({{ email_security.email_format.confidence }}% de confiance,
+    {{ email_security.email_format.sample_size }} employé(s) analysé(s)).
+    Facilite la prédiction d'adresses pour du spear phishing ciblé.
+</p>
+{% endif %}
+<p class="empty-note">
+    Note méthodologique : un DKIM "non trouvé" signifie qu'aucun des sélecteurs DKIM
+    courants testés n'a été détecté — le domaine peut utiliser un sélecteur personnalisé
+    non couvert par ce test. Ce n'est pas une confirmation d'absence de DKIM.
+</p>
+{% else %}
+<p class="empty-note">Analyse SPF/DKIM/DMARC non exécutée.</p>
+{% endif %}
+
+<!-- ==================== EMPLOYÉS ==================== -->
+<h2>Employés / emails identifiés</h2>
+{% if employees %}
+<table>
+    <thead><tr><th>Nom (deviné)</th><th>Poste</th><th>Email</th><th>Confiance</th></tr></thead>
+    <tbody>
+    {% for emp in employees %}
+        <tr>
+            <td>{{ emp.name or "—" }}</td>
+            <td>{{ emp.position or "—" }}</td>
+            <td>{{ emp.email }}</td>
+            <td>{{ emp.confidence }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-note">Aucun employé identifié.</p>
+{% endif %}
+
+<!-- ==================== FUITES ==================== -->
+<h2>Fuites de credentials</h2>
+{% if leaks %}
+<table>
+    <thead><tr><th>Email</th><th>Statut</th><th>Source(s) de la fuite</th></tr></thead>
+    <tbody>
+    {% for leak in leaks %}
+        <tr>
+            <td>{{ leak.email }}</td>
+            <td>
+                {% if leak.leaked == true %}<span class="badge badge-leaked">Compromis</span>
+                {% elif leak.leaked == false %}<span class="badge badge-clean">Aucune fuite</span>
+                {% else %}<span class="badge badge-unknown">Inconnu</span>{% endif %}
+            </td>
+            <td>{{ leak.sources | map(attribute='source') | join(", ") if leak.sources else "—" }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p class="empty-note">Par principe de sécurité, aucun mot de passe n'est jamais affiché en clair dans ce rapport.</p>
+{% else %}
+<p class="empty-note">Aucun email vérifié.</p>
+{% endif %}
+
+<!-- ==================== RECOMMANDATIONS ==================== -->
+<h2>Recommandations</h2>
+{% if recommendations %}
+<ul class="recommendations">
+    {% for rec in recommendations %}
+    <li><strong>{{ rec.priority }}</strong> — {{ rec.text }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="empty-note">Aucune recommandation spécifique — surface d'exposition faible.</p>
+{% endif %}
+
+<div class="disclaimer">
+    <strong>Méthodologie :</strong> ce rapport a été généré via reconnaissance passive
+    (OSINT) à partir de sources publiques : Sublist3r, crt.sh (transparence des
+    certificats), WhatWeb, détection de technologies par empreinte HTTP/HTML,
+    theHarvester et Hunter.io (identification d'employés), requêtes DNS TXT
+    (SPF/DKIM/DMARC), vérification de fuites de credentials via API publique, et
+    détection passive de sous-domaines candidats au takeover (CNAME orphelins et
+    empreintes de pages non revendiquées — sans aucune tentative de revendication),
+    et classification par mot-clé des environnements hors-prod / panneaux
+    d'administration exposés (heuristique sur le nom, non confirmée par requête).
+    Aucune tentative d'exploitation, d'intrusion ou d'accès non autorisé n'a été
+    réalisée. Les données présentées reflètent l'état observable au moment du scan
+    et peuvent évoluer. Ce document est confidentiel et destiné exclusivement à son
+    destinataire dans le cadre d'un usage autorisé (audit de sécurité, programme de
+    bug bounty en scope).
+</div>
+
+</body>
+</html>

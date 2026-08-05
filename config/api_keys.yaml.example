@@ -1,0 +1,75 @@
+# ============================================================
+# api_keys.yaml.example
+#
+# COPIE ce fichier en `config/api_keys.yaml` puis remplis tes clés :
+#     cp config/api_keys.yaml.example config/api_keys.yaml
+#
+# `config/api_keys.yaml` est dans .gitignore et ne doit JAMAIS être
+# commité. Ce fichier `.example` sert de modèle documenté et ne
+# contient aucun secret.
+#
+# Rappel de priorité : une variable d'environnement du même nom
+# écrase toujours la valeur définie ici.
+#     ex: export LEAKCHECK_API_KEY="..."  >  leakcheck_api_key ci-dessous
+# ============================================================
+
+api_keys:
+  # Vérification de fuites de credentials.
+  # Le framework fonctionne SANS aucune de ces clés : le provider par
+  # défaut (XposedOrNot) est gratuit et ne nécessite pas d'inscription.
+
+  # LeakCheck.io — l'endpoint v2 complet nécessite un plan payant.
+  # Sans clé, le module bascule sur l'API publique gratuite (moins de détails).
+  leakcheck_api_key: null
+
+  # HaveIBeenPwned — API v3, payante (~4$/mois).
+  # Env : HIBP_API_KEY
+  hibp_api_key: null
+
+  # Hunter.io — recherche d'emails professionnels. Gratuit jusqu'à
+  # 25 requêtes/mois. Utile si theHarvester est bloqué par l'anti-bot
+  # de Google/Bing (cas fréquent).
+  # Env : HUNTER_API_KEY
+  hunter_api_key: null
+
+  # SecurityTrails — enrichit la découverte de sous-domaines.
+  # Env : SECURITYTRAILS_API_KEY
+  securitytrails_api_key: null
+
+  # Shodan — croise les sous-domaines avec les services déjà indexés.
+  # Env : SHODAN_API_KEY
+  shodan_api_key: null
+
+scan:
+  # Provider utilisé par défaut pour la vérification de fuites.
+  # Valeurs : xposedornot | leakcheck | hibp | both
+  default_provider: xposedornot
+
+  # Moteur de détection de technologies.
+  # Valeurs : whatweb | lite | both
+  default_tech_engine: both
+
+  # LIMITE DE SÉCURITÉ — nombre maximum de sous-domaines réellement
+  # analysés à l'étape "technologies". Sur un très gros domaine
+  # (des milliers de sous-domaines), lancer WhatWeb sur chacun peut
+  # saturer les ressources de la machine. Les sous-domaines au-delà
+  # de cette limite restent listés dans le rapport, seule l'analyse
+  # de technologies est plafonnée. Mets 0 pour désactiver (déconseillé).
+  max_tech_targets: 40
+
+  # Sources theHarvester. "all" est déconseillé : il inclut des dizaines
+  # de sources nécessitant des clés API absentes, qui échouent lentement
+  # une par une sans rien apporter.
+  theharvester_sources: baidu,bing,crtsh,duckduckgo,google,yahoo
+
+  # Timeouts en secondes.
+  theharvester_timeout: 120
+  crtsh_timeout: 30
+
+history:
+  # Conserver l'historique des scans en base (SQLite).
+  keep_scan_history: true
+
+  # Au-delà de ce nombre, les scans les plus anciens sont purgés
+  # automatiquement (avec leurs rapports PDF).
+  max_history_entries: 200

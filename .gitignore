@@ -1,0 +1,45 @@
+# ============================================================
+# Secrets et configuration locale — NE JAMAIS COMMITER
+# ============================================================
+config/api_keys.yaml
+.env
+*.key
+*.pem
+
+# ============================================================
+# Données de scan — contiennent des informations potentiellement
+# sensibles (emails d'employés, fuites de credentials, cartographie
+# d'infrastructure). Ne doivent jamais se retrouver dans un dépôt.
+# ============================================================
+backend/scans.db
+backend/scans.db-journal
+backend/generated_reports/
+*.pdf
+result*.json
+smoke_test_report_*.pdf
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+env/
+.pytest_cache/
+
+# ============================================================
+# Node / frontend (outils de dev uniquement)
+# ============================================================
+node_modules/
+package-lock.json
+
+# ============================================================
+# Système / éditeurs
+# ============================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
