@@ -6,6 +6,8 @@ de sources publiques, **interprète** les résultats (candidats au
 takeover, environnements hors-prod, surface de phishing), calcule un
 score d'exposition et produit un rapport PDF prêt à livrer.
 
+![Démo OSINT-Frame](docs/demo.gif)
+
 > **Reconnaissance passive uniquement.** Cet outil n'effectue aucune
 > tentative d'exploitation, d'intrusion ou de revendication de ressource
 > (pas de création de bucket/app pour "confirmer" un takeover). Lis la
