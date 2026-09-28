@@ -1,6 +1,6 @@
 # OSINT-Frame
 
-Framework de reconnaissance passive pour le bug bounty. Prend un nom de
+Framework de reconnaissance passive pour red team et le bug bounty. Prend un nom de
 domaine en entrée, cartographie sa surface d'exposition externe à partir
 de sources publiques, **interprète** les résultats (candidats au
 takeover, environnements hors-prod, surface de phishing), calcule un
